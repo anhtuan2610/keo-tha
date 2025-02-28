@@ -6,7 +6,7 @@ import {
   // Node,
   OnNodesChange,
   NodeMouseHandler,
-  NodeChange,
+  // NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useRef } from "react";
@@ -58,6 +58,7 @@ const GridTable = ({
                   startX: node.position.x,
                   startY: node.position.y,
                 });
+                setIsShowShelfForm(true);
                 return;
               }
             });
@@ -66,7 +67,6 @@ const GridTable = ({
           }
           setSelectedShelfId(changes[0].id);
           setIsUpdateForm(true);
-          setIsShowShelfForm(true);
           if (changes[0].type == "position" || changes[0].type == "selected") {
             setFormData(
               (prev) =>

@@ -13,10 +13,13 @@ const Navbar = ({
   setIsShowAddBinForm: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const handleCreateNewForm = () => {
-    setIsShowShelfForm(true);
+    setIsShowShelfForm(false); // unmount form
     setIsShowAddBinForm(false);
     setIsUpdateForm(false);
     setFormData(null);
+    setTimeout(() => {
+      setIsShowShelfForm(true); // mount lại form sau khi đã unmount
+    }, 0); // đảm bảo react render lại
   };
   return (
     <div className="flex justify-between items-center border bg-ic-white-6s px-5 py-2">

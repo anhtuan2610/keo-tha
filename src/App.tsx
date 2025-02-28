@@ -32,7 +32,7 @@ const initialNodes: TShelfNode[] = [
     // label là data trong cái hình ấy
     id: "1",
     type: "resizableNode", // type này tự định nghĩa thôi
-    data: { label: "A-1", zone: "A", row: 0, level: 1, shelfCode: "A-1" },
+    data: { label: "A-1", zone: "A", row: 1, level: 1, shelfCode: "A-1" },
     position: { x: 0, y: 0 },
     width: 150,
     height: 40,
@@ -80,28 +80,28 @@ function App() {
             setNodes={setNodes}
           />
         </div>
-        {isShowShelfForm && (
+        {(isShowShelfForm || isShowAddBinForm) && (
           <div className="w-[30%] h-full border bg-ic-white-6s space-y-3">
-            <ShelfForm
-              isUpdateForm={isUpdateForm}
-              setIsShowShelfForm={setIsShowShelfForm}
-              formData={formData}
-              setFormData={setFormData}
-              selectedShelfId={selectedShelfId}
-              nodes={nodes}
-              setNodes={setNodes}
-            />
-            {isUpdateForm && (
+            {isShowShelfForm && !isShowAddBinForm && (
+              <ShelfForm
+                isUpdateForm={isUpdateForm}
+                setIsShowShelfForm={setIsShowShelfForm}
+                formData={formData}
+                setFormData={setFormData}
+                selectedShelfId={selectedShelfId}
+                nodes={nodes}
+                setNodes={setNodes}
+              />
+            )}
+
+            {isUpdateForm && isShowShelfForm && !isShowAddBinForm && (
               <BinsList
                 setIsShowAddBinForm={setIsShowAddBinForm}
                 setIsShowShelfForm={setIsShowShelfForm}
               />
             )}
-          </div>
-        )}
-        {isShowAddBinForm && (
-          <div className="w-[30%] h-full border bg-ic-white-6s space-y-3">
-            <BinForm />
+
+            {isShowAddBinForm && !isShowShelfForm && <BinForm />}
           </div>
         )}
       </div>

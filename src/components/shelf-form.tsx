@@ -8,8 +8,8 @@ import { TFormData, TShelfNode } from "../App";
 
 const validate = yup.object({
   shelfCode: yup.string().optional(),
-  zone: yup.string().typeError("must is character a-z").max(2).required(),
-  row: yup.number().typeError("must is number").max(2).required(),
+  zone: yup.string().typeError("must is character a-z").required(),
+  row: yup.number().typeError("must is number").required(),
   level: yup.number().typeError("must is number").required(),
   length: yup.number().typeError("must is number").required(),
   width: yup.number().typeError("must is number").required(),
@@ -59,14 +59,12 @@ const ShelfForm = ({
 
     setShelfCodeString((prev) => {
       let [zone = "", row = ""] = prev.split("-"); // Đảm bảo có giá trị mặc định
-
       if (inputId === "zone") {
         zone = inputValue.trim();
       }
       if (inputId === "row") {
         row = inputValue.trim();
       }
-
       return `${zone}-${row}`; // Đảm bảo chuỗi hợp lệ
     });
   };
@@ -122,7 +120,7 @@ const ShelfForm = ({
           height: Number(data.length),
         },
       ]);
-      setIsShowShelfForm(false);
+      setIsShowShelfForm(false); // ...
     }
   };
 
@@ -159,7 +157,7 @@ const ShelfForm = ({
               readOnly
               {...register("shelfCode")}
               onChange={handleInputChange}
-              value={formData?.shelfCode}
+              value={shelfCodeString}
               type="text"
             />
             {errors && (
