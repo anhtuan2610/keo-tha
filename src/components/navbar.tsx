@@ -1,25 +1,19 @@
 import { Button } from "@janbox/ds";
-import { TFormData } from "../App";
+import { TFormData, TFormType } from "../App";
 
 const Navbar = ({
-  setIsShowShelfForm,
-  setIsUpdateForm,
   setFormData,
-  setIsShowAddBinForm,
+  setFormTypes,
 }: {
-  setIsShowShelfForm: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsUpdateForm: React.Dispatch<React.SetStateAction<boolean>>;
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
-  setIsShowAddBinForm: React.Dispatch<React.SetStateAction<boolean>>;
+  setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
 }) => {
   const handleCreateNewForm = () => {
-    setIsShowShelfForm(false); // unmount form
-    setIsShowAddBinForm(false);
-    setIsUpdateForm(false);
     setFormData(null);
-    setTimeout(() => {
-      setIsShowShelfForm(true); // mount lại form sau khi đã unmount
-    }, 0); // đảm bảo react render lại
+    setFormTypes("createShelf");
+    // setTimeout(() => {
+    //   setIsShowShelfForm(true); // mount lại form sau khi đã unmount
+    // }, 0); // đảm bảo react render lại
   };
   return (
     <div className="flex justify-between items-center border bg-ic-white-6s px-5 py-2">

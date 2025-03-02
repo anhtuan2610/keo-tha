@@ -8,9 +8,9 @@ import {
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { generateId } from "../utils/helper";
-import { TFormData, TShelfNode } from "../App";
+import { TFormData, TFormType, TShelfNode } from "../App";
 
 const validate = yup.object({
   shelfCode: yup.string().required(),
@@ -26,59 +26,50 @@ const validate = yup.object({
 const ShelfForm = ({
   formData,
   setFormData,
-  isUpdateForm,
-  setIsShowShelfForm,
+  formTypes,
+  setFormTypes,
   selectedShelfId,
   nodes,
   setNodes,
 }: {
   formData: TFormData | null;
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
-  isUpdateForm: boolean;
-  setIsShowShelfForm: React.Dispatch<React.SetStateAction<boolean>>;
+  formTypes: TFormType;
+  setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
   selectedShelfId: string | null;
   nodes: TShelfNode[];
   setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
-  const [shelfCodeString, setShelfCodeString] = useState<string>("");
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
+    getValues,
+    setValue,
   } = useForm({
     mode: "onSubmit",
+
     resolver: yupResolver(validate),
   });
 
-  const handleOnChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputId = e.target.id;
-    const inputValue = e.target.value;
+  // const handleOnChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const inputId = e.target.id;
+  //   const inputValue = e.target.value;
 
-    setFormData(
-      (prev) =>
-        ({
-          ...prev,
-          [inputId]: inputValue ?? "", // Đảm bảo giá trị không undefined
-        } as TFormData)
-    ); // Ép kiểu để tránh lỗi TypeScript
-
-    // setShelfCodeString((prev) => {
-    //   let [zone = "", row = ""] = prev.split("-"); // Đảm bảo có giá trị mặc định
-    //   if (inputId === "zone") {
-    //     zone = inputValue.trim();
-    //   }
-    //   if (inputId === "row") {
-    //     row = inputValue.trim();
-    //   }
-    //   return `${zone}-${row}`; // Đảm bảo chuỗi hợp lệ
-    // });
-  };
+  //   setFormData(
+  //     (prev) =>
+  //       ({
+  //         ...prev,
+  //         [inputId]: inputValue ?? "", // Đảm bảo giá trị không undefined
+  //       } as TFormData)
+  //   ); // Ép kiểu để tránh lỗi TypeScript
+  // };
 
   const handleOnSubmit = (data: TFormData) => {
-    if (isUpdateForm) {
+    if (formTypes == "updateShelf") {
       handleUpdateShelf(data);
-    } else {
+    }
+    if (formTypes == "createShelf") {
       handleCreateNewShelf(data);
     }
   };
@@ -91,8 +82,8 @@ const ShelfForm = ({
             ...node,
             data: {
               ...node.data,
-              label: `${data.zone}-${data.row}`,
-              shelfCode: `${data.zone}-${data.row}`,
+              label: data.shelfCode ?? "",
+              shelfCode: data.shelfCode ?? "",
               zone: data.zone,
               row: data.row,
               level: data.level,
@@ -103,8 +94,8 @@ const ShelfForm = ({
             position: { x: Number(data.startX), y: Number(data.startY) },
           }
     );
-
     setNodes(updatedNodes);
+    setFormTypes(""); // ...
   };
 
   const handleCreateNewShelf = (data: TFormData) => {
@@ -114,11 +105,11 @@ const ShelfForm = ({
         {
           id: generateId(),
           data: {
+            shelfCode: data.shelfCode ?? "",
             label: data.shelfCode ?? "",
             zone: data.zone,
             row: data.row,
             level: data.level,
-            shelfCode: shelfCodeString,
             nodesChildId: [],
           },
           style: { zIndex: Number(data.level) },
@@ -128,32 +119,51 @@ const ShelfForm = ({
           height: Number(data.length),
         },
       ]);
-      setIsShowShelfForm(false); // ...
+      setFormTypes(""); // ...
     }
   };
 
   useEffect(() => {
-    reset(formData ?? {}); // Nếu formData là null thì reset về {}
+    if (!formData) {
+      // reset({ width: undefined });
+      // setValue("shelfCode", "");
+      // setValue("zone", "");
+      // setValue("row", undefined);
+      // setValue("level", undefined);
+      // setValue("length", undefined);
+      // setValue("width", undefined);
+      // setValue("startX", undefined);
+      // setValue("startY", undefined);
+      // resetField("width", undefined);
+      return;
+    }
+
+    setValue("shelfCode", formData.shelfCode ?? "");
+    setValue("zone", formData.zone);
+    setValue("row", formData.row);
+    setValue("level", formData.level);
+    setValue("length", formData.length);
+    setValue("width", formData.width);
+    setValue("startX", formData.startX);
+    setValue("startY", formData.startY);
   }, [formData]);
 
-  useEffect(() => {
-    if (formData) {
-      setShelfCodeString(`${formData.zone || ""}-${formData.row || ""}`);
-    }
-  }, [formData]);
+  // useEffect(() => {
+  //   //reset(formData ?? {}); // Nếu formData là null thì reset về {}
+  // }, [formData]);
 
   return (
     <form onSubmit={handleSubmit(handleOnSubmit)}>
       <div className="px-3 pt-5 space-y-3">
         <div className="flex justify-between items-center">
           <p className="text-base font-medium ">
-            {isUpdateForm ? "Update Shelf" : "Create Shelf"}
+            {formTypes == "updateShelf" ? "Update Shelf" : "Create Shelf"}
           </p>
           <div className="flex gap-2">
             <Button
               color="primary"
               variant="outlined"
-              onClick={() => setIsShowShelfForm(false)}
+              onClick={() => setFormTypes("")}
             >
               Cancel
             </Button>
@@ -169,10 +179,8 @@ const ShelfForm = ({
               id="shelfCode"
               placeholder="Hint Text"
               readOnly
-              {...register("shelfCode")}
-              onChange={handleOnChangeInput}
-              value={shelfCodeString}
               type="text"
+              {...register("shelfCode")}
             />
             {errors && (
               <FormHelperText error>{errors.shelfCode?.message}</FormHelperText>
@@ -185,9 +193,14 @@ const ShelfForm = ({
                 id="zone"
                 placeholder="Zone"
                 {...register("zone")}
-                onChange={handleOnChangeInput}
-                value={formData?.zone}
                 type="text"
+                onChange={(e) => {
+                  setValue("zone", e.target.value); // ?
+                  setValue(
+                    "shelfCode",
+                    e.target.value + "-" + getValues("row").toString() // getValues chua co data ms nhat
+                  );
+                }}
               />
               {errors && (
                 <FormHelperText error>{errors.zone?.message}</FormHelperText>
@@ -199,8 +212,15 @@ const ShelfForm = ({
                 id="row"
                 placeholder="Row"
                 {...register("row")}
-                onChange={handleOnChangeInput}
-                value={formData?.row}
+                onChange={(e) => {
+                  console.log("🚀 ~ e.target.value:", e.target.value);
+
+                  setValue("row", Number(e.target.value));
+                  setValue(
+                    "shelfCode",
+                    getValues("zone") + "-" + e.target.value // getValues chua co data ms nhat
+                  );
+                }}
               />
               {errors && (
                 <FormHelperText error>{errors.row?.message}</FormHelperText>
@@ -212,8 +232,6 @@ const ShelfForm = ({
                 id="level"
                 placeholder="Level"
                 {...register("level")}
-                onChange={handleOnChangeInput}
-                value={formData?.level}
               />
               {errors && (
                 <FormHelperText error>{errors.level?.message}</FormHelperText>
@@ -224,13 +242,18 @@ const ShelfForm = ({
             <FormLabel required>Dimensions </FormLabel>
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
+                {/* <input
+                  id="length"
+                  placeholder="Length"
+                  {...register("length")}
+                  type="number"
+                /> */}
                 <InputNumber
                   id="length"
                   placeholder="Length"
                   {...register("length")}
-                  onChange={handleOnChangeInput}
-                  value={formData?.length}
                 />
+
                 {errors && (
                   <FormHelperText error>
                     {errors.length?.message}
@@ -242,8 +265,6 @@ const ShelfForm = ({
                   id="width"
                   placeholder="Width"
                   {...register("width")}
-                  onChange={handleOnChangeInput}
-                  value={formData?.width}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -260,8 +281,6 @@ const ShelfForm = ({
                   id="startX"
                   placeholder="Start X"
                   {...register("startX")}
-                  onChange={handleOnChangeInput}
-                  value={formData?.startX}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -272,8 +291,6 @@ const ShelfForm = ({
                   id="startY"
                   placeholder="Start Y"
                   {...register("startY")}
-                  onChange={handleOnChangeInput}
-                  value={formData?.startY}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>

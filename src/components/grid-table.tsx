@@ -11,7 +11,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useCallback, useRef } from "react";
 import resizableNode from "../../src/components/resizable-node";
-import { TFormData, TShelfNode } from "../App";
+import { TFormData, TFormType, TShelfNode } from "../App";
 
 export const nodeTypes = {
   // component mapping in object // sử dụng một object(nodeTypes) để chứa các component tương ứng với từng key, rồi lấy ra component dựa trên key đó
@@ -20,18 +20,14 @@ export const nodeTypes = {
 
 const GridTable = ({
   setFormData,
+  setFormTypes,
   setSelectedShelfId,
-  setIsShowAddBinForm,
-  setIsShowShelfForm,
-  setIsUpdateForm,
   nodes,
   setNodes,
 }: {
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
+  setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
   setSelectedShelfId: React.Dispatch<React.SetStateAction<string | null>>;
-  setIsShowAddBinForm: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsShowShelfForm: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsUpdateForm: React.Dispatch<React.SetStateAction<boolean>>;
   nodes: TShelfNode[];
   setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
@@ -42,56 +38,79 @@ const GridTable = ({
       // trạng thái vừa được chọn vào (type là selected)
       // trạng thái di chuyển (type là position, trạng thái này cũng là 1 mảng nhưng chỉ bao gồm 1 node là node đang di chuyển) // ở trạng thái này chỉ có data vị trí x y
       {
-        // const newNodes = applyNodeChanges(changes, nodes);
-        if (changes[0].type) {
-          // type là position hoặc selected thì node(duy nhất) mới chính thức đang được pick và di chuyển
-          if (lastSelectedNodeId.current !== changes[0].id) {
-            // set dimensions // không có điều kiện thì vẫn đúng nhưng không tối ưu (đang cập nhật lại length width mặc dù vẫn đang chỉ pick 1 thằng (chỉ nên cập nhật lại khi pick thằng khác))
-            nodes.forEach((node) => {
-              if (changes[0].id == node.id) {
-                // bốc đúng thằng đang được chọn ở trong nodes
-                setFormData({
-                  // shelfCode: node.data.shelfCode, // hết lỗi nhảy chữ?
-                  zone: node.data.zone,
-                  row: node.data.row,
-                  level: node.data.level,
-                  length: node.height ?? 0,
-                  width: node.width ?? 0,
-                  startX: node.position.x,
-                  startY: node.position.y,
-                });
-                setIsShowShelfForm(true);
-                return;
-              }
-            });
-            // console.log("set width");
-            lastSelectedNodeId.current = changes[0].id;
-          }
-          setSelectedShelfId(changes[0].id);
-          setIsUpdateForm(true);
-          setIsShowAddBinForm(false);
-          if (changes[0].type == "position" || changes[0].type == "selected") {
-            setFormData(
-              (prev) =>
-                ({
-                  ...prev, // length, width, shelf code
-                  startX: changes[0].position.x,
-                  startY: changes[0].position.y,
-                } as TFormData)
-            );
-          }
-          if (changes[0].type == "dimensions" && changes[0].resizing) {
-            setFormData(
-              (prev) =>
-                ({
-                  ...prev, // length, width, shelf code
-                  length: changes[0].dimensions.height.toString(),
-                  width: changes[0].dimensions.width.toString(),
-                } as TFormData)
-            );
-          }
+        // // const newNodes = applyNodeChanges(changes, nodes);
+        // if (changes[0].type) {
+        //   // type là position hoặc selected thì node(duy nhất) mới chính thức đang được pick và di chuyển
+        //   if (lastSelectedNodeId.current !== changes[0].id) {
+        //     // set dimensions // không có điều kiện thì vẫn đúng nhưng không tối ưu (đang cập nhật lại length width mặc dù vẫn đang chỉ pick 1 thằng (chỉ nên cập nhật lại khi pick thằng khác))
+        //     nodes.forEach((node) => {
+        //       if (changes[0].id == node.id) {
+        //         // bốc đúng thằng đang được chọn ở trong nodes
+        //         setFormData({
+        //           // shelfCode: node.data.shelfCode, // hết lỗi nhảy chữ?
+        //           zone: node.data.zone,
+        //           row: node.data.row,
+        //           level: node.data.level,
+        //           length: node.height ?? 0,
+        //           width: node.width ?? 0,
+        //           startX: node.position.x,
+        //           startY: node.position.y,
+        //         });
+        //         setIsShowShelfForm(true);
+        //         return;
+        //       }
+        //     });
+        //     // console.log("set width");
+        //     lastSelectedNodeId.current = changes[0].id;
+        //   }
+        //   setSelectedShelfId(changes[0].id);
+        //   setIsUpdateForm(true);
+        //   setIsShowAddBinForm(false);
+        //   if (changes[0].type == "position" || changes[0].type == "selected") {
+        //     setFormData(
+        //       (prev) =>
+        //         ({
+        //           ...prev, // length, width, shelf code
+        //           startX: changes[0].position.x,
+        //           startY: changes[0].position.y,
+        //         } as TFormData)
+        //     );
+        //   }
+        //   if (changes[0].type == "dimensions" && changes[0].resizing) {
+        //     setFormData(
+        //       (prev) =>
+        //         ({
+        //           ...prev, // length, width, shelf code
+        //           length: changes[0].dimensions.height.toString(),
+        //           width: changes[0].dimensions.width.toString(),
+        //         } as TFormData)
+        //     );
+        //   }
+        // }
+        if (
+          (changes[0].type == "position" && changes[0].dragging) ||
+          (changes[0].type == "dimensions" && changes[0].resizing)
+        ) {
+          nodes.forEach((node) => {
+            if (changes[0].id == node.id) {
+              // bốc đúng thằng đang được chọn ở trong nodes
+              setFormData({
+                shelfCode: node.data.shelfCode, // hết lỗi nhảy chữ?
+                zone: node.data.zone,
+                row: node.data.row,
+                level: node.data.level,
+                length: node.height ?? 0,
+                width: node.width ?? 0,
+                startX: node.position.x,
+                startY: node.position.y,
+              });
+              setSelectedShelfId(node.id);
+              setFormTypes("updateShelf");
+              return;
+            }
+          });
+          setNodes((nodes) => applyNodeChanges(changes, nodes));
         }
-        setNodes((nodes) => applyNodeChanges(changes, nodes));
       },
     [nodes, lastSelectedNodeId]
   );
@@ -100,9 +119,7 @@ const GridTable = ({
     const nodeFind = nodes.find((node) => node.id == nodeSelect.id);
     if (nodeFind) {
       setSelectedShelfId(nodeSelect.id);
-      setIsUpdateForm(true);
-      setIsShowAddBinForm(false);
-      setIsShowShelfForm(true);
+      setFormTypes("updateShelf");
       setFormData({
         shelfCode: nodeFind.data.shelfCode,
         zone: nodeFind.data.zone,

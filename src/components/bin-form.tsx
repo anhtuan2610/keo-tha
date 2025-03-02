@@ -9,7 +9,7 @@ import {
 } from "@janbox/ds";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
-import { TShelfNode } from "../App";
+import { TFormType, TShelfNode } from "../App";
 import { useEffect, useState } from "react";
 
 export type TBinFormData = {
@@ -23,12 +23,6 @@ export type TBinFormData = {
   startY: number;
 };
 
-type TLocationString = {
-  shelf: string;
-  level: number;
-  index: number;
-};
-
 const schema = yup.object({
   location: yup.string().required(),
   shelf: yup.string().required(),
@@ -40,11 +34,21 @@ const schema = yup.object({
   startY: yup.number().typeError("must is number").required(),
 });
 
-const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
+const BinForm = ({
+  nodes,
+  formTypes,
+  setFormTypes,
+}: {
+  nodes: TShelfNode[];
+  formTypes: TFormType;
+  setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
+}) => {
   const {
     register,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     control,
     formState: { errors },
   } = useForm({
@@ -52,33 +56,23 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
     resolver: yupResolver(schema),
   });
   const [binFormData, setBinFormData] = useState<TBinFormData | null>(null);
-  const [locationString, setLocationString] = useState<TLocationString>();
 
   const handleOnSubmit = (data: any) => {
     console.log(data);
   };
 
-  const handleOnChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBinFormData(
-      (prev) =>
-        ({
-          ...prev,
-          [e.target.id]: e.target.value,
-        } as TBinFormData)
-    );
-  };
-
-  useEffect(() => {
-    reset(binFormData ?? {}); // Nếu formData là null thì reset về {}
-  }, [binFormData]);
+  // const handleOnChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setBinFormData(
+  //     (prev) =>
+  //       ({
+  //         ...prev,
+  //         [e.target.id]: e.target.value,
+  //       } as TBinFormData)
+  //   );
+  // };
 
   // useEffect(() => {
-  //   setLocationString((prev) => ({
-  //     ...prev,
-  //     index: binFormData?.index,
-  //     level: binFormData?.level,
-  //     shelf: binFormData?.shelf,
-  //   }));
+  //   reset(binFormData ?? {}); // Nếu formData là null thì reset về {}
   // }, [binFormData]);
 
   return (
@@ -86,10 +80,14 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
       <div className="px-3 pt-5 space-y-3">
         <div className="flex justify-between items-center">
           <p className="text-base font-medium ">
-            {true ? "Create Bin" : "Update Bin"}
+            {formTypes == "createBin" ? "Create Bin" : "Update Bin"}
           </p>
           <div className="flex gap-2">
-            <Button color="primary" variant="outlined">
+            <Button
+              color="primary"
+              variant="outlined"
+              onClick={() => setFormTypes("")}
+            >
               Cancel
             </Button>
             <Button color="primary" variant="filled" type="submit">
@@ -105,7 +103,6 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
               placeholder="Hint Text"
               type="text"
               {...register("location")}
-              value={"a"}
               readOnly
             />
           </div>
@@ -119,22 +116,21 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
                   {...field} // kết nối SelectPortal với react-hook-form tương tự ...register // {...field} giúp truyền các thuộc tính value, onChange, onBlur, ref vào <select>, giúp React Hook Form kiểm soát nó.
                   id="shelf"
                   placeholder="Select an option"
-                  options={nodes.map((node) => {
-                    return {
+                  options={nodes
+                    .filter((node) => !node.extent) // Chỉ lấy những node không có extent
+                    .map((node) => ({
                       label: node.data.label,
                       left: <span>*</span>,
                       value: node.data.label,
-                    };
-                  })}
+                    }))}
                   onChange={(value) => {
-                    setBinFormData(
-                      (prev) =>
-                        ({
-                          ...prev,
-                          shelf: value,
-                        } as TBinFormData)
+                    setValue("shelf", value);
+                    setValue(
+                      "location",
+                      `${value}-${getValues("level") ?? ""}-${
+                        getValues("index") ?? ""
+                      }`
                     );
-                    return field.onChange(value);
                   }}
                 />
               )}
@@ -164,14 +160,13 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
                         };
                       })}
                     onChange={(value) => {
-                      setBinFormData(
-                        (prev) =>
-                          ({
-                            ...prev,
-                            level: value,
-                          } as TBinFormData)
+                      setValue("level", value);
+                      setValue(
+                        "location",
+                        `${getValues("shelf")}-${value}-${
+                          getValues("index") ?? ""
+                        }`
                       );
-                      return field.onChange(value);
                     }}
                   />
                 );
@@ -188,7 +183,15 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
               placeholder="Hint Text"
               {...register("index")}
               value={binFormData?.index}
-              onChange={handleOnChangeInput}
+              onChange={(e) => {
+                setValue("index", Number(e.target.value));
+                setValue(
+                  "location",
+                  `${getValues("shelf")}-${getValues("level")}-${
+                    e.target.value
+                  }`
+                );
+              }}
             />
             {errors && (
               <FormHelperText error>{errors.index?.message}</FormHelperText>
@@ -203,7 +206,6 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
                   placeholder="Length"
                   {...register("length")}
                   value={binFormData?.length}
-                  onChange={handleOnChangeInput}
                 />
                 {errors && (
                   <FormHelperText error>
@@ -217,7 +219,6 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
                   placeholder="Width"
                   {...register("width")}
                   value={binFormData?.width}
-                  onChange={handleOnChangeInput}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -234,7 +235,6 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
                   placeholder="Start X"
                   {...register("startX")}
                   value={binFormData?.startX}
-                  onChange={handleOnChangeInput}
                 />
                 {errors && (
                   <FormHelperText error>
@@ -248,7 +248,6 @@ const BinForm = ({ nodes }: { nodes: TShelfNode[] }) => {
                   placeholder="Start Y"
                   {...register("startY")}
                   value={binFormData?.startY}
-                  onChange={handleOnChangeInput}
                 />
                 {errors && (
                   <FormHelperText error>
