@@ -6,7 +6,7 @@ import { Node } from "@xyflow/react";
 import { twMerge } from "tailwind-merge";
 import clsx from "clsx";
 import BinsList from "./components/bins-list";
-import BinForm from "./components/bins-form";
+import BinForm from "./components/bin-form";
 
 export type TShelfNode = Node<{
   shelfCode: string;
@@ -14,6 +14,7 @@ export type TShelfNode = Node<{
   zone: string;
   row: number;
   level: number;
+  nodesChildId: string[];
 }>;
 
 export type TFormData = {
@@ -32,7 +33,14 @@ const initialNodes: TShelfNode[] = [
     // label là data trong cái hình ấy
     id: "1",
     type: "resizableNode", // type này tự định nghĩa thôi
-    data: { label: "A-1", zone: "A", row: 1, level: 1, shelfCode: "A-1" },
+    data: {
+      label: "A-1",
+      zone: "A",
+      row: 1,
+      level: 1,
+      shelfCode: "A-1",
+      nodesChildId: [],
+    },
     position: { x: 0, y: 0 },
     width: 150,
     height: 40,
@@ -41,7 +49,14 @@ const initialNodes: TShelfNode[] = [
   {
     id: "2",
     type: "resizableNode", // type này tự định nghĩa thôi
-    data: { label: "A-2", zone: "A", row: 2, level: 2, shelfCode: "A-2" },
+    data: {
+      label: "A-2",
+      zone: "A",
+      row: 2,
+      level: 2,
+      shelfCode: "A-2",
+      nodesChildId: [],
+    },
     position: { x: 100, y: 100 },
     width: 60,
     height: 150,
@@ -50,7 +65,7 @@ const initialNodes: TShelfNode[] = [
 ];
 
 function App() {
-  const [nodes, setNodes] = useState(initialNodes);
+  const [nodes, setNodes] = useState<TShelfNode[]>(initialNodes);
   const [formData, setFormData] = useState<TFormData | null>(null);
   const [isShowShelfForm, setIsShowShelfForm] = useState(false);
   const [isUpdateForm, setIsUpdateForm] = useState(false);
@@ -62,7 +77,10 @@ function App() {
       <div className="flex gap-1 w-full min-h-screen">
         <div
           className={twMerge(
-            clsx("flex flex-col min-w-[70%]", !isShowShelfForm && "w-full")
+            clsx(
+              "flex flex-col min-w-[70%]",
+              !isShowShelfForm && !isShowAddBinForm && "w-full"
+            )
           )}
         >
           <Navbar
@@ -76,6 +94,7 @@ function App() {
             setSelectedShelfId={setSelectedShelfId}
             setIsUpdateForm={setIsUpdateForm}
             setIsShowShelfForm={setIsShowShelfForm}
+            setIsShowAddBinForm={setIsShowAddBinForm}
             nodes={nodes}
             setNodes={setNodes}
           />
@@ -101,7 +120,7 @@ function App() {
               />
             )}
 
-            {isShowAddBinForm && !isShowShelfForm && <BinForm />}
+            {isShowAddBinForm && !isShowShelfForm && <BinForm nodes={nodes} />}
           </div>
         )}
       </div>

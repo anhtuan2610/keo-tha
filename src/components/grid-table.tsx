@@ -21,6 +21,7 @@ export const nodeTypes = {
 const GridTable = ({
   setFormData,
   setSelectedShelfId,
+  setIsShowAddBinForm,
   setIsShowShelfForm,
   setIsUpdateForm,
   nodes,
@@ -28,6 +29,7 @@ const GridTable = ({
 }: {
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
   setSelectedShelfId: React.Dispatch<React.SetStateAction<string | null>>;
+  setIsShowAddBinForm: React.Dispatch<React.SetStateAction<boolean>>;
   setIsShowShelfForm: React.Dispatch<React.SetStateAction<boolean>>;
   setIsUpdateForm: React.Dispatch<React.SetStateAction<boolean>>;
   nodes: TShelfNode[];
@@ -49,7 +51,7 @@ const GridTable = ({
               if (changes[0].id == node.id) {
                 // bốc đúng thằng đang được chọn ở trong nodes
                 setFormData({
-                  shelfCode: node.data.shelfCode,
+                  // shelfCode: node.data.shelfCode, // hết lỗi nhảy chữ?
                   zone: node.data.zone,
                   row: node.data.row,
                   level: node.data.level,
@@ -67,6 +69,7 @@ const GridTable = ({
           }
           setSelectedShelfId(changes[0].id);
           setIsUpdateForm(true);
+          setIsShowAddBinForm(false);
           if (changes[0].type == "position" || changes[0].type == "selected") {
             setFormData(
               (prev) =>
@@ -98,6 +101,7 @@ const GridTable = ({
     if (nodeFind) {
       setSelectedShelfId(nodeSelect.id);
       setIsUpdateForm(true);
+      setIsShowAddBinForm(false);
       setIsShowShelfForm(true);
       setFormData({
         shelfCode: nodeFind.data.shelfCode,

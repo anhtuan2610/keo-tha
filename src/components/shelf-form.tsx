@@ -1,4 +1,10 @@
-import { Button, FormHelperText, FormLabel, Input } from "@janbox/ds";
+import {
+  Button,
+  FormHelperText,
+  FormLabel,
+  Input,
+  InputNumber,
+} from "@janbox/ds";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -7,7 +13,7 @@ import { generateId } from "../utils/helper";
 import { TFormData, TShelfNode } from "../App";
 
 const validate = yup.object({
-  shelfCode: yup.string().optional(),
+  shelfCode: yup.string().required(),
   zone: yup.string().typeError("must is character a-z").required(),
   row: yup.number().typeError("must is number").required(),
   level: yup.number().typeError("must is number").required(),
@@ -45,7 +51,7 @@ const ShelfForm = ({
     resolver: yupResolver(validate),
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOnChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputId = e.target.id;
     const inputValue = e.target.value;
 
@@ -57,16 +63,16 @@ const ShelfForm = ({
         } as TFormData)
     ); // Ép kiểu để tránh lỗi TypeScript
 
-    setShelfCodeString((prev) => {
-      let [zone = "", row = ""] = prev.split("-"); // Đảm bảo có giá trị mặc định
-      if (inputId === "zone") {
-        zone = inputValue.trim();
-      }
-      if (inputId === "row") {
-        row = inputValue.trim();
-      }
-      return `${zone}-${row}`; // Đảm bảo chuỗi hợp lệ
-    });
+    // setShelfCodeString((prev) => {
+    //   let [zone = "", row = ""] = prev.split("-"); // Đảm bảo có giá trị mặc định
+    //   if (inputId === "zone") {
+    //     zone = inputValue.trim();
+    //   }
+    //   if (inputId === "row") {
+    //     row = inputValue.trim();
+    //   }
+    //   return `${zone}-${row}`; // Đảm bảo chuỗi hợp lệ
+    // });
   };
 
   const handleOnSubmit = (data: TFormData) => {
@@ -78,26 +84,27 @@ const ShelfForm = ({
   };
 
   const handleUpdateShelf = (data: TFormData) => {
-    const nodeFind = nodes.find((node) => node.id === selectedShelfId);
-    if (nodeFind) {
-      const newNodeList = nodes.map((node) =>
-        node.id !== selectedShelfId
-          ? node
-          : {
-              ...node,
-              data: {
-                ...node.data,
-                label: data.shelfCode ?? "",
-                level: data.level ?? "",
-              },
-              style: { zIndex: Number(data.level) },
-              height: Number(data.length),
-              width: Number(data.width),
-              position: { x: Number(data.startX), y: Number(data.startY) },
-            }
-      );
-      setNodes(newNodeList);
-    }
+    const updatedNodes = nodes.map((node) =>
+      node.id !== selectedShelfId
+        ? node
+        : {
+            ...node,
+            data: {
+              ...node.data,
+              label: `${data.zone}-${data.row}`,
+              shelfCode: `${data.zone}-${data.row}`,
+              zone: data.zone,
+              row: data.row,
+              level: data.level,
+            },
+            style: { zIndex: Number(data.level) },
+            height: Number(data.length),
+            width: Number(data.width),
+            position: { x: Number(data.startX), y: Number(data.startY) },
+          }
+    );
+
+    setNodes(updatedNodes);
   };
 
   const handleCreateNewShelf = (data: TFormData) => {
@@ -112,6 +119,7 @@ const ShelfForm = ({
             row: data.row,
             level: data.level,
             shelfCode: shelfCodeString,
+            nodesChildId: [],
           },
           style: { zIndex: Number(data.level) },
           type: "resizableNode",
@@ -126,6 +134,12 @@ const ShelfForm = ({
 
   useEffect(() => {
     reset(formData ?? {}); // Nếu formData là null thì reset về {}
+  }, [formData]);
+
+  useEffect(() => {
+    if (formData) {
+      setShelfCodeString(`${formData.zone || ""}-${formData.row || ""}`);
+    }
   }, [formData]);
 
   return (
@@ -156,7 +170,7 @@ const ShelfForm = ({
               placeholder="Hint Text"
               readOnly
               {...register("shelfCode")}
-              onChange={handleInputChange}
+              onChange={handleOnChangeInput}
               value={shelfCodeString}
               type="text"
             />
@@ -171,7 +185,7 @@ const ShelfForm = ({
                 id="zone"
                 placeholder="Zone"
                 {...register("zone")}
-                onChange={handleInputChange}
+                onChange={handleOnChangeInput}
                 value={formData?.zone}
                 type="text"
               />
@@ -181,13 +195,12 @@ const ShelfForm = ({
             </div>
             <div className="space-y-2">
               <FormLabel required>Row </FormLabel>
-              <Input
+              <InputNumber
                 id="row"
                 placeholder="Row"
                 {...register("row")}
-                onChange={handleInputChange}
+                onChange={handleOnChangeInput}
                 value={formData?.row}
-                type="text"
               />
               {errors && (
                 <FormHelperText error>{errors.row?.message}</FormHelperText>
@@ -195,13 +208,12 @@ const ShelfForm = ({
             </div>
             <div className="space-y-2">
               <FormLabel required>Level </FormLabel>
-              <Input
+              <InputNumber
                 id="level"
                 placeholder="Level"
                 {...register("level")}
-                onChange={handleInputChange}
+                onChange={handleOnChangeInput}
                 value={formData?.level}
-                type="text"
               />
               {errors && (
                 <FormHelperText error>{errors.level?.message}</FormHelperText>
@@ -212,13 +224,12 @@ const ShelfForm = ({
             <FormLabel required>Dimensions </FormLabel>
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
-                <Input
+                <InputNumber
                   id="length"
                   placeholder="Length"
                   {...register("length")}
-                  onChange={handleInputChange}
+                  onChange={handleOnChangeInput}
                   value={formData?.length}
-                  type="text"
                 />
                 {errors && (
                   <FormHelperText error>
@@ -227,13 +238,12 @@ const ShelfForm = ({
                 )}
               </div>
               <div className="space-y-2 w-full">
-                <Input
+                <InputNumber
                   id="width"
                   placeholder="Width"
                   {...register("width")}
-                  onChange={handleInputChange}
+                  onChange={handleOnChangeInput}
                   value={formData?.width}
-                  type="text"
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -246,26 +256,24 @@ const ShelfForm = ({
             <FormLabel required>Cordinate </FormLabel>
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
-                <Input
+                <InputNumber
                   id="startX"
                   placeholder="Start X"
                   {...register("startX")}
-                  onChange={handleInputChange}
+                  onChange={handleOnChangeInput}
                   value={formData?.startX}
-                  type="text"
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
                 )}
               </div>
               <div className="space-y-2 w-full">
-                <Input
+                <InputNumber
                   id="startY"
                   placeholder="Start Y"
                   {...register("startY")}
-                  onChange={handleInputChange}
+                  onChange={handleOnChangeInput}
                   value={formData?.startY}
-                  type="text"
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
