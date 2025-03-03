@@ -25,18 +25,18 @@ const validate = yup.object({
 
 const ShelfForm = ({
   formData,
-  setFormData,
+  // setFormData,
   formTypes,
   setFormTypes,
-  selectedShelfId,
+  selectedNodeId,
   nodes,
   setNodes,
 }: {
   formData: TFormData | null;
-  setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
+  // setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
   formTypes: TFormType;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
-  selectedShelfId: string | null;
+  selectedNodeId: string | null;
   nodes: TShelfNode[];
   setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
@@ -46,6 +46,7 @@ const ShelfForm = ({
     formState: { errors },
     getValues,
     setValue,
+    watch,
   } = useForm({
     mode: "onSubmit",
 
@@ -75,25 +76,29 @@ const ShelfForm = ({
   };
 
   const handleUpdateShelf = (data: TFormData) => {
-    const updatedNodes = nodes.map((node) =>
-      node.id !== selectedShelfId
-        ? node
-        : {
-            ...node,
-            data: {
-              ...node.data,
-              label: data.shelfCode ?? "",
-              shelfCode: data.shelfCode ?? "",
-              zone: data.zone,
-              row: data.row,
-              level: data.level,
-            },
-            style: { zIndex: Number(data.level) },
-            height: Number(data.length),
-            width: Number(data.width),
-            position: { x: Number(data.startX), y: Number(data.startY) },
-          }
-    );
+    const updatedNodes = nodes.map((node) => {
+      if (node.id != selectedNodeId) {
+        return node;
+      }
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          label: data.shelfCode ?? "",
+          shelfCode: data.shelfCode ?? "",
+          zone: data.zone,
+          row: data.row,
+          level: data.level,
+        },
+        style: { zIndex: Number(data.level) },
+        height: Number(data.length),
+        width: Number(data.width),
+        position: {
+          x: Number(data.startX),
+          y: Number(data.startY),
+        },
+      };
+    });
     setNodes(updatedNodes);
     setFormTypes(""); // ...
   };
@@ -110,7 +115,6 @@ const ShelfForm = ({
             zone: data.zone,
             row: data.row,
             level: data.level,
-            nodesChildId: [],
           },
           style: { zIndex: Number(data.level) },
           type: "resizableNode",
@@ -213,8 +217,6 @@ const ShelfForm = ({
                 placeholder="Row"
                 {...register("row")}
                 onChange={(e) => {
-                  console.log("🚀 ~ e.target.value:", e.target.value);
-
                   setValue("row", Number(e.target.value));
                   setValue(
                     "shelfCode",

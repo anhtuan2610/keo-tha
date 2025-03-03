@@ -9,71 +9,169 @@ import {
 } from "@janbox/ds";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
-import { TFormType, TShelfNode } from "../App";
+import { TFormData, TFormType, TShelfNode } from "../App";
 import { useEffect, useState } from "react";
+import { generateId } from "../utils/helper";
+import { isNil, isNumber } from "lodash-es";
 
-export type TBinFormData = {
-  location: string;
-  shelf: string;
-  level: number;
-  index: number;
-  length: number;
-  width: number;
-  startX: number;
-  startY: number;
-};
+export type TBinFormData = Omit<TFormData, "zone" | "row">;
 
 const schema = yup.object({
   location: yup.string().required(),
   shelf: yup.string().required(),
   level: yup.number().typeError("must is number").required(),
-  index: yup.number().typeError("must is number").required(),
+  index: yup
+    .number()
+    .transform((val) => (isNil(val) ? val : String(val).replaceAll(",", "")))
+    .typeError("must is number")
+    .required(),
   length: yup.number().typeError("must is number").required(),
   width: yup.number().typeError("must is number").required(),
   startX: yup.number().typeError("must is number").required(),
   startY: yup.number().typeError("must is number").required(),
 });
 
+// const InputNum = ({
+//   onChange,
+// }: {
+//   onChange?: (e: React.ChangeEvent<HTMLInputElement>, val?: number) => void;
+// }) => {
+//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const parsedNum = parseFloat(e.target.value);
+
+//     onChange?.(e, parsedNum);
+//   };
+
+//   return <input onChange={handleChange} />;
+// };
+
 const BinForm = ({
+  formData,
   nodes,
+  setNodes,
   formTypes,
   setFormTypes,
+  selectedNodeId,
 }: {
+  formData: TFormData | null;
   nodes: TShelfNode[];
+  setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
   formTypes: TFormType;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
+  selectedNodeId: string | null;
 }) => {
+  const [parentNode, setParentNode] = useState<TShelfNode>();
   const {
     register,
     handleSubmit,
-    reset,
     getValues,
     setValue,
     control,
     formState: { errors },
+    watch,
   } = useForm({
     mode: "onSubmit",
     resolver: yupResolver(schema),
   });
-  const [binFormData, setBinFormData] = useState<TBinFormData | null>(null);
 
-  const handleOnSubmit = (data: any) => {
-    console.log(data);
+  console.log(watch());
+
+  const handleOnSubmit = (data: TBinFormData) => {
+    if (formTypes == "updateBin") {
+      handleUpdateBin(data);
+    }
+    if (formTypes == "createBin") {
+      handleCreateNewBin(data);
+    }
   };
 
-  // const handleOnChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setBinFormData(
-  //     (prev) =>
-  //       ({
-  //         ...prev,
-  //         [e.target.id]: e.target.value,
-  //       } as TBinFormData)
-  //   );
-  // };
+  const handleUpdateBin = (data: TBinFormData) => {
+    const updatedNodes = nodes.map((node) => {
+      if (node.id != selectedNodeId) {
+        return node;
+      }
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          location: data.location,
+          shelfCode: data.shelfCode ?? "",
+          label: data.location ?? "",
+          level: data.level,
+        },
+        style: { zIndex: Number(data.level) },
+        height: Number(data.length),
+        width: Number(data.width),
+        position: {
+          x: Number(data.startX),
+          y: Number(data.startY),
+        },
+      };
+    });
+    setNodes(updatedNodes);
+    // setFormTypes(""); // ...
+  };
 
-  // useEffect(() => {
-  //   reset(binFormData ?? {}); // Nếu formData là null thì reset về {}
-  // }, [binFormData]);
+  const handleCreateNewBin = (data: TBinFormData) => {
+    if (nodes && parentNode) {
+      setNodes((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          data: {
+            location: data.location,
+            shelfCode: data.shelfCode ?? "",
+            label: data.location ?? "",
+            zone: parentNode.data.zone,
+            row: parentNode.data.row,
+            level: data.level,
+            parentId: parentNode.id,
+          },
+          style: { zIndex: Number(data.level) },
+          type: "resizableNode",
+          position: { x: Number(data.startX), y: Number(data.startY) },
+          width: Number(data.width),
+          height: Number(data.length),
+          parentId: parentNode.id,
+          extent: "parent",
+        },
+      ]);
+      setFormTypes(""); // ...
+    }
+  };
+
+  useEffect(() => {
+    if (selectedNodeId) {
+      if (formTypes == "updateBin") {
+        const childNode = nodes.find((node) => node.id === selectedNodeId); // *
+        if (childNode?.parentId) {
+          const findParent = nodes.find(
+            (node) => node.id === childNode.parentId
+          );
+          setParentNode(findParent);
+        }
+      }
+      if (formTypes == "createBin") {
+        const findParent = nodes.find((node) => node.id === selectedNodeId);
+        setParentNode(findParent);
+      }
+    }
+  }, [selectedNodeId, nodes]);
+
+  useEffect(() => {
+    if (formData) {
+      setValue("location", formData.location ?? "");
+      setValue("shelf", parentNode?.data.shelfCode ?? "");
+      setValue("level", formData.level);
+      setValue("index", formData.index ?? 0);
+      setValue("length", formData.length);
+      setValue("width", formData.width);
+      setValue("startX", formData.startX);
+      setValue("startY", formData.startY);
+    }
+  }, [formData, parentNode]);
+
+  console.log(register("index"));
 
   return (
     <form onSubmit={handleSubmit(handleOnSubmit)}>
@@ -116,15 +214,17 @@ const BinForm = ({
                   {...field} // kết nối SelectPortal với react-hook-form tương tự ...register // {...field} giúp truyền các thuộc tính value, onChange, onBlur, ref vào <select>, giúp React Hook Form kiểm soát nó.
                   id="shelf"
                   placeholder="Select an option"
+                  defaultValue={"a"}
                   options={nodes
-                    .filter((node) => !node.extent) // Chỉ lấy những node không có extent
+                    .filter((node) => !node.extent)
                     .map((node) => ({
                       label: node.data.label,
                       left: <span>*</span>,
-                      value: node.data.label,
+                      value: node.data.shelfCode,
                     }))}
                   onChange={(value) => {
-                    setValue("shelf", value);
+                    // setValue("shelf", value);
+                    field.onChange(value);
                     setValue(
                       "location",
                       `${value}-${getValues("level") ?? ""}-${
@@ -160,7 +260,7 @@ const BinForm = ({
                         };
                       })}
                     onChange={(value) => {
-                      setValue("level", value);
+                      field.onChange(value);
                       setValue(
                         "location",
                         `${getValues("shelf")}-${value}-${
@@ -178,20 +278,45 @@ const BinForm = ({
           </div>
           <div className="space-y-2">
             <FormLabel required>Index</FormLabel>
+            {/* <Controller
+              name="index"
+              control={control}
+              render={({ field }) => (
+                <InputNumber
+                  {...field}
+                  id="index"
+                  placeholder="Hint Text"
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setValue(
+                      "location",
+                      `${getValues("shelf")}-${getValues("level")}-${
+                        e.target.value
+                      }`
+                    );
+                  }}
+                />
+              )}
+            /> */}
             <InputNumber
-              id="index"
-              placeholder="Hint Text"
               {...register("index")}
-              value={binFormData?.index}
-              onChange={(e) => {
-                setValue("index", Number(e.target.value));
-                setValue(
-                  "location",
-                  `${getValues("shelf")}-${getValues("level")}-${
-                    e.target.value
-                  }`
-                );
+              id="index"
+              value={watch("index") ?? ""}
+              error
+              placeholder="Hint Text"
+              onChange={(_e, val) => {
+                // console.log(val, " val");
+                setValue("index", val!);
               }}
+              // onChange={(value) => {
+              //   field.onChange(value);
+              //   setValue(
+              //     "location",
+              //     `${getValues("shelf")}-${getValues("level")}-${
+              //       e.target.value
+              //     }`
+              //   );
+              // }}
             />
             {errors && (
               <FormHelperText error>{errors.index?.message}</FormHelperText>
@@ -201,11 +326,17 @@ const BinForm = ({
             <FormLabel required>Dimensions </FormLabel>
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
-                <InputNumber
-                  id="length"
-                  placeholder="Length"
-                  {...register("length")}
-                  value={binFormData?.length}
+                <Controller
+                  name="length"
+                  control={control}
+                  render={({ field }) => (
+                    <InputNumber
+                      {...field}
+                      id="length"
+                      placeholder="Length"
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
                 />
                 {errors && (
                   <FormHelperText error>
@@ -214,11 +345,17 @@ const BinForm = ({
                 )}
               </div>
               <div className="space-y-2 w-full">
-                <InputNumber
-                  id="width"
-                  placeholder="Width"
-                  {...register("width")}
-                  value={binFormData?.width}
+                <Controller
+                  name="width"
+                  control={control}
+                  render={({ field }) => (
+                    <InputNumber
+                      {...field}
+                      id="width"
+                      placeholder="Width"
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -230,11 +367,17 @@ const BinForm = ({
             <FormLabel required>Positions </FormLabel>
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
-                <InputNumber
-                  id="startX"
-                  placeholder="Start X"
-                  {...register("startX")}
-                  value={binFormData?.startX}
+                <Controller
+                  name="startX"
+                  control={control}
+                  render={({ field }) => (
+                    <InputNumber
+                      {...field}
+                      id="startX"
+                      placeholder="Start X"
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
                 />
                 {errors && (
                   <FormHelperText error>
@@ -243,11 +386,17 @@ const BinForm = ({
                 )}
               </div>
               <div className="space-y-2 w-full">
-                <InputNumber
-                  id="startY"
-                  placeholder="Start Y"
-                  {...register("startY")}
-                  value={binFormData?.startY}
+                <Controller
+                  name="startX"
+                  control={control}
+                  render={({ field }) => (
+                    <InputNumber
+                      {...field}
+                      id="startY"
+                      placeholder="Start Y"
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  )}
                 />
                 {errors && (
                   <FormHelperText error>

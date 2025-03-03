@@ -17,12 +17,13 @@ export type TFormType =
 
 export type TShelfNode = Node<{
   shelfCode?: string;
+  location?: string;
+  index?: number;
+  parentId?: string;
   label: string;
   zone: string;
   row: number;
   level: number;
-  location?: string;
-  index?: number;
   // nodesChildId: string[];
 }>;
 
@@ -30,6 +31,7 @@ export type TFormData = {
   shelfCode?: string;
   location?: string;
   index?: number;
+  parentId?: string;
   zone: string;
   row: number;
   level: number;
@@ -83,24 +85,9 @@ const initialNodes: TShelfNode[] = [
       zone: "A",
       row: 1,
       level: 1,
-    },
-    position: { x: 0, y: 0 },
-    width: 150,
-    height: 40,
-    style: { zIndex: 1 },
-    parentId: "1",
-    extent: "parent",
-  },
-  {
-    // label là data trong cái hình ấy
-    id: "4",
-    type: "resizableNode", // type này tự định nghĩa thôi
-    data: {
-      location: "A-1-1-1",
-      label: "A-1-1-1",
-      zone: "A",
-      row: 1,
-      level: 1,
+      parentId: "1",
+      index: 1,
+      shelfCode: "A-1",
     },
     position: { x: 0, y: 0 },
     width: 150,
@@ -114,7 +101,7 @@ const initialNodes: TShelfNode[] = [
 function App() {
   const [nodes, setNodes] = useState<TShelfNode[]>(initialNodes);
   const [formData, setFormData] = useState<TFormData | null>(null);
-  const [selectedShelfId, setSelectedShelfId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [formTypes, setFormTypes] = useState<TFormType>("");
   return (
     <div className="flex justify-center">
@@ -128,7 +115,7 @@ function App() {
           <GridTable
             setFormData={setFormData}
             setFormTypes={setFormTypes}
-            setSelectedShelfId={setSelectedShelfId}
+            setSelectedNodeId={setSelectedNodeId}
             nodes={nodes}
             setNodes={setNodes}
           />
@@ -138,10 +125,10 @@ function App() {
             {["createShelf", "updateShelf"].includes(formTypes) && (
               <ShelfForm
                 formData={formData}
-                setFormData={setFormData}
+                // setFormData={setFormData}
                 formTypes={formTypes}
                 setFormTypes={setFormTypes}
-                selectedShelfId={selectedShelfId}
+                selectedNodeId={selectedNodeId}
                 nodes={nodes}
                 setNodes={setNodes}
               />
@@ -151,16 +138,20 @@ function App() {
               <BinsList
                 setFormTypes={setFormTypes}
                 nodes={nodes}
-                selectedShelfId={selectedShelfId}
-                setSelectedShelfId={setSelectedShelfId}
+                selectedNodeId={selectedNodeId}
+                setSelectedNodeId={setSelectedNodeId}
+                setFormData={setFormData}
               />
             )}
 
             {(formTypes == "createBin" || formTypes == "updateBin") && (
               <BinForm
+                formData={formData}
                 setFormTypes={setFormTypes}
                 nodes={nodes}
+                setNodes={setNodes}
                 formTypes={formTypes}
+                selectedNodeId={selectedNodeId}
               />
             )}
           </div>

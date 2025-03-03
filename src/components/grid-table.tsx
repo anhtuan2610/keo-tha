@@ -21,13 +21,13 @@ export const nodeTypes = {
 const GridTable = ({
   setFormData,
   setFormTypes,
-  setSelectedShelfId,
+  setSelectedNodeId,
   nodes,
   setNodes,
 }: {
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
-  setSelectedShelfId: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedNodeId: React.Dispatch<React.SetStateAction<string | null>>;
   nodes: TShelfNode[];
   setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
@@ -63,7 +63,7 @@ const GridTable = ({
         //     // console.log("set width");
         //     lastSelectedNodeId.current = changes[0].id;
         //   }
-        //   setSelectedShelfId(changes[0].id);
+        //   setSelectedNodeId(changes[0].id);
         //   setIsUpdateForm(true);
         //   setIsShowAddBinForm(false);
         //   if (changes[0].type == "position" || changes[0].type == "selected") {
@@ -91,24 +91,29 @@ const GridTable = ({
           (changes[0].type == "position" && changes[0].dragging) ||
           (changes[0].type == "dimensions" && changes[0].resizing)
         ) {
-          nodes.forEach((node) => {
-            if (changes[0].id == node.id) {
-              // bốc đúng thằng đang được chọn ở trong nodes
-              setFormData({
-                shelfCode: node.data.shelfCode, // hết lỗi nhảy chữ?
-                zone: node.data.zone,
-                row: node.data.row,
-                level: node.data.level,
-                length: node.height ?? 0,
-                width: node.width ?? 0,
-                startX: node.position.x,
-                startY: node.position.y,
-              });
-              setSelectedShelfId(node.id);
-              setFormTypes("updateShelf");
-              return;
-            }
-          });
+          const selectedNode = nodes.find((node) => node.id === changes[0].id);
+          if (selectedNode) {
+            setFormData({
+              location: selectedNode.data.location,
+              index: selectedNode.data.index,
+              parentId: selectedNode.data.parentId,
+              shelfCode: selectedNode.data.shelfCode,
+              zone: selectedNode.data.zone,
+              row: selectedNode.data.row,
+              level: selectedNode.data.level,
+              length: selectedNode.height ?? 0,
+              width: selectedNode.width ?? 0,
+              startX: selectedNode.position.x,
+              startY: selectedNode.position.y,
+            });
+            setSelectedNodeId(selectedNode.id);
+            setFormTypes("updateShelf");
+          }
+          if (selectedNode?.extent) {
+            setFormTypes("updateBin");
+          } else {
+            setFormTypes("updateShelf");
+          }
           setNodes((nodes) => applyNodeChanges(changes, nodes));
         }
       },
@@ -116,20 +121,27 @@ const GridTable = ({
   );
 
   const handleNodeClick: NodeMouseHandler = (_e, nodeSelect) => {
-    const nodeFind = nodes.find((node) => node.id == nodeSelect.id);
-    if (nodeFind) {
-      setSelectedShelfId(nodeSelect.id);
-      setFormTypes("updateShelf");
+    const selectedNode = nodes.find((node) => node.id == nodeSelect.id);
+    if (selectedNode) {
+      setSelectedNodeId(nodeSelect.id);
       setFormData({
-        shelfCode: nodeFind.data.shelfCode,
-        zone: nodeFind.data.zone,
-        row: nodeFind.data.row,
-        level: nodeFind.data.level,
-        length: nodeFind.height ?? 0,
-        width: nodeFind.width ?? 0,
-        startX: nodeFind.position.x,
-        startY: nodeFind.position.y,
+        location: selectedNode.data.location,
+        index: selectedNode.data.index,
+        parentId: selectedNode.data.parentId,
+        shelfCode: selectedNode.data.shelfCode,
+        zone: selectedNode.data.zone,
+        row: selectedNode.data.row,
+        level: selectedNode.data.level,
+        length: selectedNode.height ?? 0,
+        width: selectedNode.width ?? 0,
+        startX: selectedNode.position.x,
+        startY: selectedNode.position.y,
       });
+      if (nodeSelect.extent) {
+        setFormTypes("updateBin");
+      } else {
+        setFormTypes("updateShelf");
+      }
     }
   };
 

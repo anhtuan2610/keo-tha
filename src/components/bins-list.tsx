@@ -1,30 +1,34 @@
-import { TFormType, TShelfNode } from "../App";
+import { TFormData, TFormType, TShelfNode } from "../App";
 
 const BinsList = ({
   setFormTypes,
   nodes,
-  selectedShelfId,
-  setSelectedShelfId,
+  selectedNodeId,
+  setSelectedNodeId,
+  setFormData,
 }: {
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
   nodes: TShelfNode[];
-  selectedShelfId: string | null;
-  setSelectedShelfId: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedNodeId: string | null;
+  setSelectedNodeId: React.Dispatch<React.SetStateAction<string | null>>;
+  setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
 }) => {
+  nodes.copyWithin;
   return (
     <div className="px-5">
       <p className="font-medium text-base">Bins</p>
       <div className="w-full h-[1px] bg-[#CAC4D0] mt-2 mb-3"></div>
       <div className="space-y-2">
         {nodes.map((node) => {
-          if (node.parentId == selectedShelfId) {
+          if (node.parentId == selectedNodeId) {
             return (
               <div
                 className="flex items-center gap-2 text-ic-brand-b font-bold border p-4
                hover:bg-gray-200 hover:text-blue-700 
                rounded-md py-1 cursor-pointer transition-all duration-200"
+                key={node.id}
                 onClick={() => {
-                  setSelectedShelfId(node.id);
+                  setSelectedNodeId(node.id);
                   setFormTypes("updateBin");
                 }}
               >
@@ -39,6 +43,7 @@ const BinsList = ({
                hover:bg-gray-200 hover:text-blue-700 
                rounded-md p-3 cursor-pointer transition-all duration-200 my-3"
         onClick={() => {
+          setFormData(null);
           setFormTypes("createBin");
         }}
       >
