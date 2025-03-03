@@ -63,17 +63,17 @@ const initialNodes: TShelfNode[] = [
     id: "2",
     type: "resizableNode", // type này tự định nghĩa thôi
     data: {
-      label: "A-2",
-      zone: "A",
-      row: 2,
-      level: 2,
-      shelfCode: "A-2",
+      label: "B-1",
+      zone: "B",
+      row: 1,
+      level: 1,
+      shelfCode: "B-1",
       // nodesChildId: [],
     },
     position: { x: 100, y: 100 },
-    width: 60,
-    height: 150,
-    style: { zIndex: 2 },
+    width: 300,
+    height: 300,
+    style: { zIndex: 1 },
   },
   {
     // label là data trong cái hình ấy
@@ -147,6 +147,7 @@ function App() {
             {(formTypes == "createBin" || formTypes == "updateBin") && (
               <BinForm
                 formData={formData}
+                setFormData={setFormData}
                 setFormTypes={setFormTypes}
                 nodes={nodes}
                 setNodes={setNodes}
