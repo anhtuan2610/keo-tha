@@ -16,19 +16,42 @@ import { isNil } from "lodash-es";
 
 export type TBinFormData = Omit<TFormData, "zone" | "row">;
 
+const transformNumber = (_: any, originalValue: any) => {
+  if (isNil(originalValue) || originalValue === "") {
+    return undefined;
+  }
+  if (typeof originalValue === "string") {
+    return Number(originalValue.replaceAll(",", ""));
+  }
+  return originalValue;
+};
+
 const schema = yup.object({
   location: yup.string().required(),
   shelf: yup.string().required(),
   level: yup.number().typeError("must is number").required(),
   index: yup
     .number()
-    .transform((val) => (isNil(val) ? val : String(val).replaceAll(",", "")))
+    // .transform((val) => (isNil(val) ? val : val.toString().replaceAll(",", "")))
+    .transform(transformNumber)
     .typeError("must is number")
     .required(),
   length: yup.number().typeError("must is number").required(),
-  width: yup.number().typeError("must is number").required(),
-  startX: yup.number().typeError("must is number").required(),
-  startY: yup.number().typeError("must is number").required(),
+  width: yup
+    .number()
+    .typeError("must is number")
+    .transform(transformNumber)
+    .required(),
+  startX: yup
+    .number()
+    .typeError("must is number")
+    .transform(transformNumber)
+    .required(),
+  startY: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
 });
 
 // const InputNum = ({
@@ -63,6 +86,7 @@ const BinForm = ({
   selectedNodeId: string | null;
 }) => {
   const [parentNode, setParentNode] = useState<TShelfNode>();
+  const [shelfSelectedId, setShelfSelectedId] = useState(parentNode?.id);
   const {
     register,
     handleSubmit,
@@ -99,14 +123,17 @@ const BinForm = ({
           shelfCode: data.shelfCode ?? "",
           label: data.location ?? "",
           level: data.level,
+          parentId: shelfSelectedId,
         },
-        style: { zIndex: Number(data.level) },
         height: Number(data.length),
         width: Number(data.width),
         position: {
           x: Number(data.startX),
           y: Number(data.startY),
         },
+        parentId: shelfSelectedId,
+        // style: { zIndex: Number(data.level) },
+        // parentId: data.parentId,
       };
     });
     setNodes(updatedNodes);
@@ -127,15 +154,15 @@ const BinForm = ({
             zone: parentNode.data.zone,
             row: parentNode.data.row,
             level: data.level,
-            parentId: parentNode.id,
+            parentId: shelfSelectedId,
           },
-          style: { zIndex: Number(data.level) },
           type: "resizableNode",
           position: { x: Number(data.startX), y: Number(data.startY) },
           width: Number(data.width),
           height: Number(data.length),
-          parentId: parentNode.id,
+          parentId: shelfSelectedId,
           extent: "parent",
+          // style: { zIndex: Number(data.level) },
         },
       ]);
       setFormTypes(""); // ...
@@ -180,7 +207,7 @@ const BinForm = ({
   useEffect(() => {
     if (formData) {
       setValue("location", formData.location ?? "");
-      setValue("shelf", parentNode?.data.shelfCode ?? ""); // setValue("shelf", parentNode?.data.shelfCode ?? "");
+      //setValue("shelf", parentNode?.data.shelfCode ?? ""); // setValue("shelf", parentNode?.data.shelfCode ?? "");
       setValue("level", formData.level);
       setValue("index", formData.index ?? 0);
       setValue("length", formData.length);
@@ -189,6 +216,12 @@ const BinForm = ({
       setValue("startY", formData.startY);
     }
   }, [formData]); // formData, parentNode
+
+  useEffect(() => {
+    if (parentNode?.data.shelfCode) {
+      setValue("shelf", parentNode.data.shelfCode);
+    }
+  }, [parentNode]);
 
   return (
     <form onSubmit={handleSubmit(handleOnSubmit)}>
@@ -226,6 +259,7 @@ const BinForm = ({
             <Controller
               name="shelf" // tên trường(field) trong form
               control={control} // nhận control của form
+              defaultValue={parentNode?.data.shelfCode}
               render={({ field }) => (
                 <SelectPortal
                   {...field} // kết nối SelectPortal với react-hook-form tương tự ...register // {...field} giúp truyền các thuộc tính value, onChange, onBlur, ref vào <select>, giúp React Hook Form kiểm soát nó.
@@ -240,6 +274,12 @@ const BinForm = ({
                     }))}
                   onChange={(value) => {
                     // setValue("shelf", value);
+                    const nodeFind = nodes.find(
+                      (node) => node.data.shelfCode == value
+                    );
+                    if (nodeFind) {
+                      setShelfSelectedId(nodeFind.id);
+                    }
                     field.onChange(value);
                     setValue(
                       "location",
@@ -266,13 +306,13 @@ const BinForm = ({
                     {...field}
                     id="level"
                     placeholder="Select an option"
-                    options={Array(5)
+                    options={Array(parentNode?.data.level)
                       .fill(null)
                       .map((_, index) => {
                         return {
-                          label: index,
+                          label: index + 1,
                           left: <span>*</span>,
-                          value: index,
+                          value: index + 1,
                         };
                       })}
                     onChange={(value) => {
@@ -316,7 +356,6 @@ const BinForm = ({
               )}
             /> */}
             <InputNumber
-              {...register("index")}
               id="index"
               value={watch("index")}
               placeholder="Hint Text"
@@ -338,7 +377,6 @@ const BinForm = ({
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
                 <InputNumber
-                  {...register}
                   id="length"
                   value={watch("length")}
                   placeholder="Length"
@@ -354,7 +392,6 @@ const BinForm = ({
               </div>
               <div className="space-y-2 w-full">
                 <InputNumber
-                  {...register}
                   id="width"
                   value={watch("width")}
                   placeholder="Width"
@@ -373,7 +410,6 @@ const BinForm = ({
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
                 <InputNumber
-                  {...register}
                   id="startX"
                   value={watch("startX")}
                   placeholder="start X"
@@ -389,7 +425,6 @@ const BinForm = ({
               </div>
               <div className="space-y-2 w-full">
                 <InputNumber
-                  {...register}
                   id="startY"
                   value={watch("startY")}
                   placeholder="start Y"

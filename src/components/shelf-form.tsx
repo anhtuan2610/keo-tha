@@ -90,13 +90,13 @@ const ShelfForm = ({
           row: data.row,
           level: data.level,
         },
-        style: { zIndex: Number(data.level) },
         height: Number(data.length),
         width: Number(data.width),
         position: {
           x: Number(data.startX),
           y: Number(data.startY),
         },
+        // style: { zIndex: Number(data.level) },
       };
     });
     setNodes(updatedNodes);
@@ -116,11 +116,11 @@ const ShelfForm = ({
             row: data.row,
             level: data.level,
           },
-          style: { zIndex: Number(data.level) },
           type: "resizableNode",
           position: { x: Number(data.startX), y: Number(data.startY) },
           width: Number(data.width),
           height: Number(data.length),
+          // style: { zIndex: Number(data.level) },
         },
       ]);
       setFormTypes(""); // ...
@@ -129,7 +129,6 @@ const ShelfForm = ({
 
   useEffect(() => {
     if (!formData) {
-      // reset({ width: undefined });
       // setValue("shelfCode", "");
       // setValue("zone", "");
       // setValue("row", undefined);
@@ -138,7 +137,6 @@ const ShelfForm = ({
       // setValue("width", undefined);
       // setValue("startX", undefined);
       // setValue("startY", undefined);
-      // resetField("width", undefined);
       return;
     }
 

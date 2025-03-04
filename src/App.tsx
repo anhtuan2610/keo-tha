@@ -50,14 +50,14 @@ const initialNodes: TShelfNode[] = [
       label: "A-1",
       zone: "A",
       row: 1,
-      level: 1,
+      level: 5,
       shelfCode: "A-1",
       // nodesChildId: [],
     },
     position: { x: 0, y: 0 },
     width: 300,
     height: 300,
-    style: { zIndex: 1 },
+    // style: { zIndex: 1 },
   },
   {
     id: "2",
@@ -73,7 +73,7 @@ const initialNodes: TShelfNode[] = [
     position: { x: 100, y: 100 },
     width: 300,
     height: 300,
-    style: { zIndex: 1 },
+    // style: { zIndex: 1 },
   },
   {
     // label là data trong cái hình ấy
@@ -92,9 +92,9 @@ const initialNodes: TShelfNode[] = [
     position: { x: 0, y: 0 },
     width: 150,
     height: 40,
-    style: { zIndex: 1 },
     parentId: "1",
     extent: "parent",
+    // style: { zIndex: 1 },
   },
 ];
 
@@ -111,7 +111,12 @@ function App() {
             clsx("flex flex-col min-w-[70%]", formTypes == "" && "w-full")
           )}
         >
-          <Navbar setFormData={setFormData} setFormTypes={setFormTypes} />
+          <Navbar
+            setFormData={setFormData}
+            setFormTypes={setFormTypes}
+            nodes={nodes}
+            setNodes={setNodes}
+          />
           <GridTable
             setFormData={setFormData}
             setFormTypes={setFormTypes}

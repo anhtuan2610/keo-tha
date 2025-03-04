@@ -114,7 +114,7 @@ const GridTable = ({
           } else {
             setFormTypes("updateShelf");
           }
-          setNodes((nodes) => applyNodeChanges(changes, nodes));
+          setNodes((nodes) => applyNodeChanges(changes, nodes) as TShelfNode[]);
         }
       },
     [nodes, lastSelectedNodeId]
