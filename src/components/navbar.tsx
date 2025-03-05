@@ -4,17 +4,22 @@ import { TFormData, TFormType, TShelfNode } from "../App";
 const Navbar = ({
   setFormData,
   setFormTypes,
+  currentLevel,
+  setCurrentLevel,
   nodes,
-  setNodes,
 }: {
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
+  currentLevel: number;
+  setCurrentLevel: React.Dispatch<React.SetStateAction<number>>;
   nodes: TShelfNode[];
-  setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
   const handleCreateNewForm = () => {
     setFormData(null);
-    setFormTypes("createShelf");
+    setFormTypes("");
+    setTimeout(() => {
+      setFormTypes("createShelf");
+    }, 0);
   };
   const highestNodeLevel = nodes.reduce((highestNode, currNode) => {
     return currNode.data.level > highestNode.data.level
@@ -26,6 +31,7 @@ const Navbar = ({
     <div className="flex justify-between items-center border bg-ic-white-6s px-5 py-2">
       <p className="text-base font-medium">Warehouse Layout</p>
       <div className="flex items-center gap-4">
+        <div>Level: {currentLevel}</div>
         <Menu>
           <MenuHandler>
             <svg
@@ -60,11 +66,8 @@ const Navbar = ({
                   <MenuItem
                     key={index}
                     onClick={() => {
-                      setNodes((prev) =>
-                        prev.filter((node) => {
-                          return node.data.level == index + 1 || !node.extent;
-                        })
-                      );
+                      setCurrentLevel(index + 1);
+                      setFormTypes("");
                     }}
                   >
                     Level {index + 1}

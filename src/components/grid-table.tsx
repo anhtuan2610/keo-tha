@@ -9,7 +9,7 @@ import {
   // NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import resizableNode from "../../src/components/resizable-node";
 import { TFormData, TFormType, TShelfNode } from "../App";
 
@@ -24,12 +24,16 @@ const GridTable = ({
   setSelectedNodeId,
   nodes,
   setNodes,
+  filterNodes,
+  setFilterNodes,
 }: {
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
   setSelectedNodeId: React.Dispatch<React.SetStateAction<string | null>>;
   nodes: TShelfNode[];
   setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
+  filterNodes: TShelfNode[];
+  setFilterNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
   const lastSelectedNodeId = useRef<string | null>(null);
   const onNodesChange: OnNodesChange = useCallback(
@@ -38,7 +42,7 @@ const GridTable = ({
       // trạng thái vừa được chọn vào (type là selected)
       // trạng thái di chuyển (type là position, trạng thái này cũng là 1 mảng nhưng chỉ bao gồm 1 node là node đang di chuyển) // ở trạng thái này chỉ có data vị trí x y
       {
-        // // const newNodes = applyNodeChanges(changes, nodes);
+        // const newNodes = applyNodeChanges(changes, nodes);
         // if (changes[0].type) {
         //   // type là position hoặc selected thì node(duy nhất) mới chính thức đang được pick và di chuyển
         //   if (lastSelectedNodeId.current !== changes[0].id) {
@@ -91,8 +95,12 @@ const GridTable = ({
           (changes[0].type == "position" && changes[0].dragging) ||
           (changes[0].type == "dimensions" && changes[0].resizing)
         ) {
-          const selectedNode = nodes.find((node) => node.id === changes[0].id);
+          const selectedNode = filterNodes.find(
+            (node) => node.id === changes[0].id
+          );
           if (selectedNode) {
+            console.log(selectedNode);
+
             setFormData({
               location: selectedNode.data.location,
               index: selectedNode.data.index,
@@ -114,7 +122,24 @@ const GridTable = ({
           } else {
             setFormTypes("updateShelf");
           }
-          setNodes((nodes) => applyNodeChanges(changes, nodes) as TShelfNode[]);
+          // setFilterNodes(
+          //   (nodes) => applyNodeChanges(changes, nodes) as TShelfNode[]
+          // );
+          setNodes((node) => {
+            const updatedNodes = applyNodeChanges(
+              // update nodes (thong so, vi tri, kich thuoc), nma dang render theo filternode
+              changes,
+              node
+            ) as TShelfNode[];
+            setFilterNodes((prevFilterNodes) =>
+              prevFilterNodes.map((node) => {
+                const updatedNode = updatedNodes.find((n) => n.id === node.id);
+                return updatedNode ? updatedNode : node;
+              })
+            );
+
+            return updatedNodes;
+          });
         }
       },
     [nodes, lastSelectedNodeId]
@@ -145,12 +170,24 @@ const GridTable = ({
     }
   };
 
+  // useEffect(() => {
+  //   // case tao them node trong nodes
+  //   setFilterNodes(nodes);
+  // }, [nodes.length]);
+
+  // useEffect(() => { // gap case cap nhat form -> setFilter(nodes) se quay tro lai nodes goc (ko filter)
+  //   setFilterNodes(nodes);
+  // }, [nodes]);
+
+  // console.log("🚀 ~ useEffect ~ nodes:", nodes);
+  // console.log("🚀 ~ useEffect ~ filterNodes:", filterNodes);
+
   return (
     <div className="p-4">
       <div className="flex"></div>
       <div className="h-screen">
         <ReactFlow
-          nodes={nodes}
+          nodes={filterNodes}
           onNodesChange={onNodesChange}
           onNodeClick={handleNodeClick} // click này là click vào cả cái lưới nếu click trúng cái node thì event ...
           nodeTypes={nodeTypes} // khi khai báo như vậy tức là node sẽ được render theo cái component mà cái type trùng với thuộc tính trong object đã khai báo

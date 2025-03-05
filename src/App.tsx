@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GridTable from "./components/grid-table";
 import Navbar from "./components/navbar";
 import ShelfForm from "./components/shelf-form";
@@ -66,7 +66,7 @@ const initialNodes: TShelfNode[] = [
       label: "B-1",
       zone: "B",
       row: 1,
-      level: 1,
+      level: 2,
       shelfCode: "B-1",
       // nodesChildId: [],
     },
@@ -85,8 +85,8 @@ const initialNodes: TShelfNode[] = [
       zone: "A",
       row: 1,
       level: 1,
-      parentId: "1",
       index: 1,
+      parentId: "1",
       shelfCode: "A-1",
     },
     position: { x: 0, y: 0 },
@@ -96,13 +96,52 @@ const initialNodes: TShelfNode[] = [
     extent: "parent",
     // style: { zIndex: 1 },
   },
+  {
+    // label là data trong cái hình ấy
+    id: "4",
+    type: "resizableNode", // type này tự định nghĩa thôi
+    data: {
+      location: "B-1-2-1",
+      label: "B-1-2-1",
+      zone: "B",
+      row: 1,
+      level: 2,
+      index: 1,
+      parentId: "2",
+      shelfCode: "B-1",
+    },
+    position: { x: 0, y: 0 },
+    width: 150,
+    height: 40,
+    parentId: "2",
+    extent: "parent",
+    // style: { zIndex: 1 },
+  },
 ];
 
 function App() {
-  const [nodes, setNodes] = useState<TShelfNode[]>(initialNodes);
+  const [nodes, setNodes] = useState<TShelfNode[]>(initialNodes); // original
+  const [filterNodes, setFilterNodes] = useState<TShelfNode[]>(initialNodes); // coppy + filter
   const [formData, setFormData] = useState<TFormData | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [formTypes, setFormTypes] = useState<TFormType>("");
+  const [currentLevel, setCurrentLevel] = useState(1);
+
+  useEffect(() => {
+    const firstRender = nodes.filter((node) => {
+      return node.data.level == 1 || !node.extent;
+    });
+    setFilterNodes(firstRender);
+  }, []);
+
+  useEffect(() => {
+    setFilterNodes(
+      nodes.filter((node) => {
+        return node.data.level == currentLevel || !node.extent;
+      })
+    );
+  }, [nodes, currentLevel]);
+
   return (
     <div className="flex justify-center">
       <div className="flex gap-1 w-full min-h-screen">
@@ -114,8 +153,9 @@ function App() {
           <Navbar
             setFormData={setFormData}
             setFormTypes={setFormTypes}
+            currentLevel={currentLevel}
+            setCurrentLevel={setCurrentLevel}
             nodes={nodes}
-            setNodes={setNodes}
           />
           <GridTable
             setFormData={setFormData}
@@ -123,6 +163,8 @@ function App() {
             setSelectedNodeId={setSelectedNodeId}
             nodes={nodes}
             setNodes={setNodes}
+            filterNodes={filterNodes}
+            setFilterNodes={setFilterNodes}
           />
         </div>
         {formTypes && (
@@ -136,6 +178,7 @@ function App() {
                 selectedNodeId={selectedNodeId}
                 nodes={nodes}
                 setNodes={setNodes}
+                setFilterNodes={setFilterNodes}
               />
             )}
 
@@ -149,7 +192,7 @@ function App() {
               />
             )}
 
-            {(formTypes == "createBin" || formTypes == "updateBin") && (
+            {["createBin", "updateBin"].includes(formTypes) && (
               <BinForm
                 formData={formData}
                 setFormData={setFormData}
@@ -158,6 +201,7 @@ function App() {
                 setNodes={setNodes}
                 formTypes={formTypes}
                 selectedNodeId={selectedNodeId}
+                setFilterNodes={setFilterNodes}
               />
             )}
           </div>

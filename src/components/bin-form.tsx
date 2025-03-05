@@ -11,20 +11,9 @@ import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { TFormData, TFormType, TShelfNode } from "../App";
 import { useEffect, useState } from "react";
-import { generateId } from "../utils/helper";
-import { isNil } from "lodash-es";
+import { generateId, transformNumber } from "../utils/helper";
 
 export type TBinFormData = Omit<TFormData, "zone" | "row">;
-
-const transformNumber = (_: any, originalValue: any) => {
-  if (isNil(originalValue) || originalValue === "") {
-    return undefined;
-  }
-  if (typeof originalValue === "string") {
-    return Number(originalValue.replaceAll(",", ""));
-  }
-  return originalValue;
-};
 
 const schema = yup.object({
   location: yup.string().required(),
@@ -76,6 +65,7 @@ const BinForm = ({
   formTypes,
   setFormTypes,
   selectedNodeId,
+  setFilterNodes,
 }: {
   formData: TFormData | null;
   setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
@@ -84,6 +74,7 @@ const BinForm = ({
   formTypes: TFormType;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
   selectedNodeId: string | null;
+  setFilterNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
   const [parentNode, setParentNode] = useState<TShelfNode>();
   const [shelfSelectedId, setShelfSelectedId] = useState(parentNode?.id);
@@ -137,6 +128,7 @@ const BinForm = ({
       };
     });
     setNodes(updatedNodes);
+    // setFilterNodes(updatedNodes);
     setFormTypes(""); // ...
   };
 
@@ -220,8 +212,11 @@ const BinForm = ({
   useEffect(() => {
     if (parentNode?.data.shelfCode) {
       setValue("shelf", parentNode.data.shelfCode);
+      setShelfSelectedId(parentNode.id);
     }
   }, [parentNode]);
+
+  console.log("render");
 
   return (
     <form onSubmit={handleSubmit(handleOnSubmit)}>
@@ -359,7 +354,7 @@ const BinForm = ({
               id="index"
               value={watch("index")}
               placeholder="Hint Text"
-              onChange={(_e, val) => {
+              onChange={(_, val) => {
                 // nếu mà sử dụng event thì input nó không nhận được (trường hợp nhập nhiều số) vì có dấu "," nếu sử dụng val thì nó có cho phép điền cả dấu , sau đó mình phải tự validate và parse
                 setValue(
                   "location",

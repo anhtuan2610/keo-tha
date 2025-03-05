@@ -9,18 +9,42 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect } from "react";
-import { generateId } from "../utils/helper";
+import { generateId, transformNumber } from "../utils/helper";
 import { TFormData, TFormType, TShelfNode } from "../App";
 
 const validate = yup.object({
   shelfCode: yup.string().required(),
   zone: yup.string().typeError("must is character a-z").required(),
-  row: yup.number().typeError("must is number").required(),
-  level: yup.number().typeError("must is number").required(),
-  length: yup.number().typeError("must is number").required(),
-  width: yup.number().typeError("must is number").required(),
-  startX: yup.number().typeError("must is number").required(),
-  startY: yup.number().typeError("must is number").required(),
+  row: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
+  level: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
+  length: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
+  width: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
+  startX: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
+  startY: yup
+    .number()
+    .transform(transformNumber)
+    .typeError("must is number")
+    .required(),
 });
 
 const ShelfForm = ({
@@ -31,14 +55,15 @@ const ShelfForm = ({
   selectedNodeId,
   nodes,
   setNodes,
+  setFilterNodes,
 }: {
   formData: TFormData | null;
-  // setFormData: React.Dispatch<React.SetStateAction<TFormData | null>>;
   formTypes: TFormType;
   setFormTypes: React.Dispatch<React.SetStateAction<TFormType>>;
   selectedNodeId: string | null;
   nodes: TShelfNode[];
   setNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
+  setFilterNodes: React.Dispatch<React.SetStateAction<TShelfNode[]>>;
 }) => {
   const {
     register,
@@ -47,9 +72,10 @@ const ShelfForm = ({
     getValues,
     setValue,
     watch,
+    reset,
+    resetField,
   } = useForm({
     mode: "onSubmit",
-
     resolver: yupResolver(validate),
   });
 
@@ -100,6 +126,7 @@ const ShelfForm = ({
       };
     });
     setNodes(updatedNodes);
+    // setFilterNodes(updatedNodes);
     setFormTypes(""); // ...
   };
 
@@ -128,26 +155,16 @@ const ShelfForm = ({
   };
 
   useEffect(() => {
-    if (!formData) {
-      // setValue("shelfCode", "");
-      // setValue("zone", "");
-      // setValue("row", undefined);
-      // setValue("level", undefined);
-      // setValue("length", undefined);
-      // setValue("width", undefined);
-      // setValue("startX", undefined);
-      // setValue("startY", undefined);
-      return;
+    if (formData) {
+      setValue("shelfCode", formData.shelfCode ?? "");
+      setValue("zone", formData.zone);
+      setValue("row", formData.row);
+      setValue("level", formData.level);
+      setValue("length", formData.length);
+      setValue("width", formData.width);
+      setValue("startX", formData.startX);
+      setValue("startY", formData.startY);
     }
-
-    setValue("shelfCode", formData.shelfCode ?? "");
-    setValue("zone", formData.zone);
-    setValue("row", formData.row);
-    setValue("level", formData.level);
-    setValue("length", formData.length);
-    setValue("width", formData.width);
-    setValue("startX", formData.startX);
-    setValue("startY", formData.startY);
   }, [formData]);
 
   // useEffect(() => {
@@ -194,10 +211,10 @@ const ShelfForm = ({
               <Input
                 id="zone"
                 placeholder="Zone"
-                {...register("zone")}
+                value={watch("zone")}
                 type="text"
                 onChange={(e) => {
-                  setValue("zone", e.target.value); // ?
+                  setValue("zone", e.target.value);
                   setValue(
                     "shelfCode",
                     e.target.value + "-" + getValues("row").toString() // getValues chua co data ms nhat
@@ -213,12 +230,12 @@ const ShelfForm = ({
               <InputNumber
                 id="row"
                 placeholder="Row"
-                {...register("row")}
-                onChange={(e) => {
-                  setValue("row", Number(e.target.value));
+                value={watch("row")}
+                onChange={(_, value) => {
+                  setValue("row", value!);
                   setValue(
                     "shelfCode",
-                    getValues("zone") + "-" + e.target.value // getValues chua co data ms nhat
+                    getValues("zone") + "-" + value // getValues chua co data ms nhat
                   );
                 }}
               />
@@ -231,7 +248,10 @@ const ShelfForm = ({
               <InputNumber
                 id="level"
                 placeholder="Level"
-                {...register("level")}
+                value={watch("level")}
+                onChange={(_, value) => {
+                  setValue("level", value!);
+                }}
               />
               {errors && (
                 <FormHelperText error>{errors.level?.message}</FormHelperText>
@@ -242,16 +262,13 @@ const ShelfForm = ({
             <FormLabel required>Dimensions </FormLabel>
             <div className="flex justify-between gap-3">
               <div className="space-y-2 w-full">
-                {/* <input
-                  id="length"
-                  placeholder="Length"
-                  {...register("length")}
-                  type="number"
-                /> */}
                 <InputNumber
                   id="length"
                   placeholder="Length"
-                  {...register("length")}
+                  value={watch("length")}
+                  onChange={(_, value) => {
+                    setValue("length", value!);
+                  }}
                 />
 
                 {errors && (
@@ -264,7 +281,10 @@ const ShelfForm = ({
                 <InputNumber
                   id="width"
                   placeholder="Width"
-                  {...register("width")}
+                  value={watch("width")}
+                  onChange={(_, value) => {
+                    setValue("width", value!);
+                  }}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -280,7 +300,10 @@ const ShelfForm = ({
                 <InputNumber
                   id="startX"
                   placeholder="Start X"
-                  {...register("startX")}
+                  value={watch("startX")}
+                  onChange={(_, value) => {
+                    setValue("startX", value!);
+                  }}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
@@ -290,7 +313,10 @@ const ShelfForm = ({
                 <InputNumber
                   id="startY"
                   placeholder="Start Y"
-                  {...register("startY")}
+                  value={watch("startY")}
+                  onChange={(_, value) => {
+                    setValue("startY", value!);
+                  }}
                 />
                 {errors && (
                   <FormHelperText error>{errors.width?.message}</FormHelperText>
